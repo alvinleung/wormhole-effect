@@ -34,6 +34,7 @@ const update: UpdateFunction<typeof init> = (renderer, frame, programState) => {
   const uniforms = {
     u_resolution: [canvas.width, canvas.height],
     u_delta: delta,
+    u_time: elapsed,
     // uMouse: [mousePos.current.x, mousePos.current.y],
     // uNoiseOffset: [noiseOffset.current.x, noiseOffset.current.y],
     // uCheckerSize: checkerSize.current,
