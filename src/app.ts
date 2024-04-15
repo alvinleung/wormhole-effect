@@ -29,8 +29,6 @@ const update: UpdateFunction<typeof init> = (renderer, frame, programState) => {
   const { elapsed, delta } = frame;
   const { programInfo, bufferInfo } = programState;
 
-  console.log(delta);
-
   const uniforms = {
     u_resolution: [canvas.width, canvas.height],
     u_delta: delta,
