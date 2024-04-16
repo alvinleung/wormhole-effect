@@ -11,6 +11,12 @@ import EFFECT_FRAG from "./EffectGL.frag";
 //@ts-ignore
 import EFFECT_VERT from "./EffectGL.vert";
 
+const mouse = { x: 0, y: 0 };
+window.addEventListener("pointermove", (e) => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+});
+
 const init = async ({ gl, canvas }: CanvasRenderer) => {
   // init webgl
   const program = twgl.createProgramFromSources(gl, [EFFECT_VERT, EFFECT_FRAG]);
@@ -33,7 +39,7 @@ const update: UpdateFunction<typeof init> = (renderer, frame, programState) => {
     u_resolution: [canvas.width, canvas.height],
     u_delta: delta,
     u_time: elapsed,
-    // uMouse: [mousePos.current.x, mousePos.current.y],
+    u_mouse: [mouse.x, mouse.y],
     // uNoiseOffset: [noiseOffset.current.x, noiseOffset.current.y],
     // uCheckerSize: checkerSize.current,
   };

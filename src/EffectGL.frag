@@ -7,6 +7,7 @@ precision mediump float;
 uniform vec2 u_resolution;
 uniform float u_delta;
 uniform float u_time;
+uniform vec2 u_mouse;
 
 // our textures coming from p5
 uniform sampler2D tex0;
@@ -47,45 +48,37 @@ float noise(vec3 P) {
 }
 float noise(vec2 P) { return noise(vec3(P, 0.0)); }
 
-float centerPulse(vec2 uv, vec2 center, float pulseSpeed) {
-    vec2 offsetFromOrigin = vec2(uv.y-center.y, uv.x-center.x);
-
-    float rot = atan(offsetFromOrigin.y ,offsetFromOrigin.x);
-    float rotNoiseSeed = rot * u_time * pulseSpeed * 0.3;
-    float rotNoise = noise(vec2(rotNoiseSeed, rotNoiseSeed*0.6));
+float centerPulse(vec2 offsetFromOrigin, float rot, float pulseSpeed) {
+    float rotNoiseSeed = rot * u_time * pulseSpeed * 0.2;
+    float rotNoise = noise(vec2(rotNoiseSeed * 5.0, 1.0));
 
     // float pulseSpeed = 0.005; // constant speed
-    float pulse = sin(u_time * pulseSpeed + distance(uv + 0.2 * rotNoise, center) * 10.0);
+    float pulse = sin(u_time * 0.02 + distance(vec2(1,1) * .5 * rotNoise, offsetFromOrigin) * 10.0);
 
     return pulse;
 }
 
-float centerStripe(vec2 uv, vec2 center, float rotationSpeed, float lineInterval) {
-     vec2 offsetFromOrigin = vec2(uv.y-center.y, uv.x-center.x);
-    // float rotationSpeed = 0.0001;
-    // float lineInterval = 10.0;
-
-    float rot = atan(offsetFromOrigin.y ,offsetFromOrigin.x);
+float centerStripe(vec2 offsetFromOrigin, float rot, float rotationSpeed, float lineInterval) {
     float stripeColor = mod(degrees(u_time * rotationSpeed + rot), lineInterval);
     return stripeColor;
 }
 
-float pulsingStripe(vec2 uv, vec2 center, float rotationSpeed, float pulseSpeed, float lineInterval) {
-    float pulse = centerPulse(uv, center, pulseSpeed);
-    float stripeColor = centerStripe(uv, center, rotationSpeed, lineInterval);
+float pulsingStripe(vec2 offsetFromOrigin, float rot, float rotationSpeed, float pulseSpeed, float lineInterval) {
+    float pulse = centerPulse(offsetFromOrigin, rot, pulseSpeed);
+    float stripeColor = centerStripe(offsetFromOrigin, rot, rotationSpeed, lineInterval);
     return pulse + stripeColor;
 }
 
-vec4 pulsingStripeWithOffset(vec2 uv, vec2 center, float pulseOffset, float widthFactor) {
+vec4 pulsingStripeWithOffset(vec2 offsetFromOrigin, float rot, float pulseOffset, float widthFactor) {
     float rotationSpeed = 0.00001;
 
-    float outputColor = pulsingStripe(uv,center, rotationSpeed * pulseOffset, 0.001 * pulseOffset, 10.0 * widthFactor);
-    float outputColor2 = pulsingStripe(uv,center, rotationSpeed * pulseOffset, 0.002 * pulseOffset, 10.0 * widthFactor);
-    float outputColor3 = pulsingStripe(uv,center, rotationSpeed * pulseOffset * 0.5, 0.003 * pulseOffset, 5.0 * widthFactor);
+    float outputColor = pulsingStripe(offsetFromOrigin, rot, rotationSpeed * pulseOffset, 0.001 * pulseOffset, 10.0 * widthFactor);
+    float outputColor2 = pulsingStripe(offsetFromOrigin, rot, rotationSpeed * pulseOffset, 0.002 * pulseOffset, 10.0 * widthFactor);
+    float outputColor3 = pulsingStripe(offsetFromOrigin, rot, rotationSpeed * pulseOffset * 0.5, 0.003 * pulseOffset, 5.0 * widthFactor);
 
-    float clampingPulse = pulsingStripe(uv,center, rotationSpeed, 0.002, 200.0);
+    float clampingPulse = pulsingStripe(offsetFromOrigin, rot, rotationSpeed, 0.002, 200.0);
 
-    return vec4(outputColor* clampingPulse, outputColor2* clampingPulse,outputColor3* clampingPulse,1.0);
+    return vec4(outputColor* clampingPulse, outputColor2* clampingPulse,outputColor3* clampingPulse, 1.0);
 }
 
 
@@ -102,18 +95,27 @@ void main() {
     vec2 uv = gl_FragCoord.xy / maxAxis;
     vec2 center = 0.5 * u_resolution / maxAxis;
 
+    vec2 offsetFromOrigin = vec2(uv.y-center.y, uv.x-center.x);
+    float rot = atan(offsetFromOrigin.y ,offsetFromOrigin.x);
 
-    vec4 s1 = pulsingStripeWithOffset(uv, center, 1.0, 5.0);
-    vec4 s2 = pulsingStripeWithOffset(uv, center, 3.0, 0.6);
-    vec4 s3 = pulsingStripeWithOffset(uv, center, 3.0, 2.0);
-    vec4 s4 = pulsingStripeWithOffset(uv, center, 4.0, 1.0);
-    vec4 s5 = pulsingStripeWithOffset(uv, center, 5.2, 5.0);
-    vec4 s6 = pulsingStripeWithOffset(uv, center, 6.5, 10.0);
+    vec4 s1 = pulsingStripeWithOffset(offsetFromOrigin, rot, 5.4, 0.3);
+    vec4 s2 = pulsingStripeWithOffset(offsetFromOrigin, rot, 4.1, 0.9);
+    // vec4 s3 = pulsingStripeWithOffset(uv, center, 3.0, 2.0);
+    // vec4 s4 = pulsingStripeWithOffset(offsetFromOrigin, rot, 2.0, 1.0);
+    // vec4 s5 = pulsingStripeWithOffset(uv, center, 5.2, 5.0);
+    // vec4 s6 = pulsingStripeWithOffset(uv, center, 6.5, 10.0);
 
-    vec4 s7 = pulsingStripeWithOffset(uv, center, 10.0, 30.0);
+    // vec4 s7 = pulsingStripeWithOffset(uv, center, 10.0, 30.0);
 
-    // gl_FragColor = vec4(vec3(pulsingStripe(uv, center, 0.0001, 0.005, 10.0)), 1.0);
-    gl_FragColor = vec4(2.0) - (s7 * s6 * s1 * s4 * s2);
+    // gl_FragColor = vec4(vec3(pulsingStripe(offsetFromOrigin, rot, 0.0001, 0.005, 10.0)), 1.0);
+    
+    gl_FragColor = vec4(vec3(
+        // centerPulse(offsetFromOrigin, rot, 0.02),
+        centerPulse(offsetFromOrigin, rot, 0.02)
+        // centerPulse(offsetFromOrigin, rot, 0.6)
+    ), 10.0);
+    // gl_FragColor = vec4(2.0) - (s7 * s6 * s1 * s4 * s2);
+    // gl_FragColor = vec4(2.0) - (s1 * s2);
 
     return;
 
